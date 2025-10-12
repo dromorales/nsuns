@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Interactive nSuns 5-Day Workout Planner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+      }
+      .table-cell--numeric {
+        text-align: right;
+        font-feature-settings: "tnum";
+      }
+      .active-nav-button {
+        background-color: #475569;
+        color: #ffffff;
+      }
+      .inactive-nav-button {
+        background-color: #f1f5f9;
+        color: #475569;
+      }
+      .hidden {
+        display: none;
+      }
+      #print-header {
+        display: none;
+      }
+      @media print {
+        body {
+          background-color: #fff !important;
+          color: #000 !important;
+        }
+        main {
+          padding: 0 !important;
+        }
+        header,
+        #day-selector,
+        #one-rep-max-inputs {
+          display: none !important;
+        }
+        #print-header {
+          display: block !important;
+        }
+        .workout-day-container {
+          display: block !important;
+          page-break-inside: avoid;
+          margin-bottom: 2rem;
+        }
+        .bg-white {
+          background-color: #fff !important;
+        }
+        .shadow-md {
+          box-shadow: none !important;
+          border: 1px solid #e5e7eb;
+        }
+        .grid-cols-1.md\:grid-cols-2 {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .text-stone-800 {
+          color: #000 !important;
+        }
+        .text-slate-800 {
+          color: #000 !important;
+        }
+        .text-stone-600 {
+          color: #333 !important;
+        }
+      }
+    </style>
+  </head>
+  <body class="bg-stone-50 text-stone-800">
+    <main class="container mx-auto p-4 md:p-8">
+      <header class="text-center mb-8">
+        <h1 class="text-3xl md:text-4xl font-bold text-slate-800">
+          nSuns 5-Day Workout Planner
+        </h1>
+        <p class="text-stone-600 mt-2">
+          An interactive dashboard for your weekly lifting schedule.
+        </p>
+      </header>
+
+      <section id="print-header">
+        <div
+          id="training-max-display-print"
+          class="p-4 border-b border-stone-200"
+        >
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-bold">
+              Your Calculated Training Maxes (TM)
+            </h2>
+            <p class="text-base">
+              Using
+              <span id="tm-percent-display-print" class="font-semibold">0</span
+              >% of 1RM
+            </p>
+          </div>
+          <div class="grid grid-cols-4 gap-4 text-center">
+            <div>
+              <p class="font-medium text-stone-600">Bench Press</p>
+              <p class="text-lg font-bold text-slate-900">
+                <span id="bench-tm-display-print">0</span> lbs
+              </p>
+              <p class="text-sm text-stone-500">
+                from <span id="bench-1rm-display-print">0</span> lbs 1RM
+              </p>
+            </div>
+            <div>
+              <p class="font-medium text-stone-600">Squat</p>
+              <p class="text-lg font-bold text-slate-900">
+                <span id="squat-tm-display-print">0</span> lbs
+              </p>
+              <p class="text-sm text-stone-500">
+                from <span id="squat-1rm-display-print">0</span> lbs 1RM
+              </p>
+            </div>
+            <div>
+              <p class="font-medium text-stone-600">Overhead Press</p>
+              <p class="text-lg font-bold text-slate-900">
+                <span id="ohp-tm-display-print">0</span> lbs
+              </p>
+              <p class="text-sm text-stone-500">
+                from <span id="ohp-1rm-display-print">0</span> lbs 1RM
+              </p>
+            </div>
+            <div>
+              <p class="font-medium text-stone-600">Deadlift</p>
+              <p class="text-lg font-bold text-slate-900">
+                <span id="deadlift-tm-display-print">0</span> lbs
+              </p>
+              <p class="text-sm text-stone-500">
+                from <span id="deadlift-1rm-display-print">0</span> lbs 1RM
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <nav
+        id="day-selector"
+        class="flex flex-wrap justify-center gap-2 mb-8"
+      ></nav>
+
+      <div id="workout-content" class="space-y-8"></div>
+
+      <section
+        id="one-rep-max-inputs"
+        class="mt-12 bg-white p-6 rounded-2xl shadow-md"
+      >
+        <h2 class="text-2xl font-bold text-slate-800 mb-4">
+          Training Max Calculator
+        </h2>
+        <p class="text-stone-600 mb-6">
+          Enter your estimated 1 Rep Max (1RM) for each main lift. Your Training
+          Max (TM) will be calculated from this value, and all workout weights
+          will be adjusted accordingly.
+        </p>
+        <div
+          class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 items-end"
+        >
+          <div>
+            <label
+              for="bench-1rm"
+              class="block text-sm font-medium text-stone-700"
+              >Bench Press 1RM (lbs)</label
+            >
+            <input
+              type="number"
+              id="bench-1rm"
+              value="100"
+              class="mt-1 block w-full rounded-md border-stone-300 shadow-sm focus:border-slate-500 focus:ring-slate-500 sm:text-sm"
+            />
+          </div>
+          <div>
+            <label
+              for="squat-1rm"
+              class="block text-sm font-medium text-stone-700"
+              >Squat 1RM (lbs)</label
+            >
+            <input
+              type="number"
+              id="squat-1rm"
+              value="140"
+              class="mt-1 block w-full rounded-md border-stone-300 shadow-sm focus:border-slate-500 focus:ring-slate-500 sm:text-sm"
+            />
+          </div>
+          <div>
+            <label
+              for="ohp-1rm"
+              class="block text-sm font-medium text-stone-700"
+              >Overhead Press 1RM (lbs)</label
+            >
+            <input
+              type="number"
+              id="ohp-1rm"
+              value="70"
+              class="mt-1 block w-full rounded-md border-stone-300 shadow-sm focus:border-slate-500 focus:ring-slate-500 sm:text-sm"
+            />
+          </div>
+          <div>
+            <label
+              for="deadlift-1rm"
+              class="block text-sm font-medium text-stone-700"
+              >Deadlift 1RM (lbs)</label
+            >
+            <input
+              type="number"
+              id="deadlift-1rm"
+              value="180"
+              class="mt-1 block w-full rounded-md border-stone-300 shadow-sm focus:border-slate-500 focus:ring-slate-500 sm:text-sm"
+            />
+          </div>
+          <div>
+            <label
+              for="tm-percentage"
+              class="block text-sm font-medium text-stone-700"
+              >TM %</label
+            >
+            <input
+              type="number"
+              id="tm-percentage"
+              value="90"
+              class="mt-1 block w-full rounded-md border-stone-300 shadow-sm focus:border-slate-500 focus:ring-slate-500 sm:text-sm"
+            />
+          </div>
+          <button
+            id="update-weights-btn"
+            class="w-full bg-slate-700 text-white font-bold py-2 px-4 rounded-lg hover:bg-slate-600 transition-colors duration-200 sm:col-span-2 lg:col-span-1"
+          >
+            Update Weights
+          </button>
+        </div>
+        <div
+          id="training-max-display"
+          class="mt-6 pt-4 border-t border-stone-200"
+        >
+          <div class="flex justify-between items-center mb-2">
+            <h3 class="text-lg font-semibold text-slate-800">
+              Your Calculated Training Maxes (TM)
+            </h3>
+            <p class="text-sm text-stone-600">
+              Using
+              <span id="tm-percent-display-screen" class="font-semibold">0</span
+              >% of 1RM
+            </p>
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+            <div>
+              <p class="text-sm font-medium text-stone-600">Bench Press</p>
+              <p class="text-xl font-bold text-slate-900">
+                <span id="bench-tm-display">0</span> lbs
+              </p>
+              <p class="text-xs text-stone-500">
+                from <span id="bench-1rm-display">0</span> lbs 1RM
+              </p>
+            </div>
+            <div>
+              <p class="text-sm font-medium text-stone-600">Squat</p>
+              <p class="text-xl font-bold text-slate-900">
+                <span id="squat-tm-display">0</span> lbs
+              </p>
+              <p class="text-xs text-stone-500">
+                from <span id="squat-1rm-display">0</span> lbs 1RM
+              </p>
+            </div>
+            <div>
+              <p class="text-sm font-medium text-stone-600">Overhead Press</p>
+              <p class="text-xl font-bold text-slate-900">
+                <span id="ohp-tm-display">0</span> lbs
+              </p>
+              <p class="text-xs text-stone-500">
+                from <span id="ohp-1rm-display">0</span> lbs 1RM
+              </p>
+            </div>
+            <div>
+              <p class="text-sm font-medium text-stone-600">Deadlift</p>
+              <p class="text-xl font-bold text-slate-900">
+                <span id="deadlift-tm-display">0</span> lbs
+              </p>
+              <p class="text-xs text-stone-500">
+                from <span id="deadlift-1rm-display">0</span> lbs 1RM
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const daySelector = document.getElementById("day-selector");
+      const workoutContent = document.getElementById("workout-content");
+
+      const trainingMaxes = {
+        bench: 0,
+        squat: 0,
+        ohp: 0,
+        deadlift: 0,
+      };
+
+      const liftTemplates = {
+        t1: [
+          { percentage: 0.75, reps: "5" },
+          { percentage: 0.85, reps: "3" },
+          { percentage: 0.95, reps: "1+", isAmrap: true },
+          { percentage: 0.9, reps: "3" },
+          { percentage: 0.85, reps: "3" },
+          { percentage: 0.8, reps: "3" },
+          { percentage: 0.75, reps: "5" },
+          { percentage: 0.7, reps: "5" },
+          { percentage: 0.65, reps: "5+", isAmrap: true },
+        ],
+        t2: [
+          { percentage: 0.55, reps: "6" },
+          { percentage: 0.65, reps: "5" },
+          { percentage: 0.75, reps: "3" },
+          { percentage: 0.75, reps: "5" },
+          { percentage: 0.7, reps: "7" },
+          { percentage: 0.65, reps: "4" },
+          { percentage: 0.6, reps: "6" },
+          { percentage: 0.55, reps: "8" },
+        ],
+      };
+
+      const workoutData = {
+        day1: {
+          title: "Day 1: Bench Press & Overhead Press",
+          t1: { name: "Bench Press", liftKey: "bench" },
+          t2: { name: "Overhead Press (OHP)", liftKey: "ohp" },
+          accessories: [
+            "Dumbbell Rows (4x10-12)",
+            "Dumbbell Bench Press (3x10-15)",
+            "Dumbbell Skullcrushers (3x10-15)",
+            "Dumbbell Rear Delt Flyes (3x15-20)",
+          ],
+        },
+        day2: {
+          title: "Day 2: Squat & Sumo Deadlift",
+          t1: { name: "Squat", liftKey: "squat" },
+          t2: { name: "Sumo Deadlift", liftKey: "deadlift" },
+          accessories: [
+            "Barbell RDLs (4x8-12)",
+            "Dumbbell Walking Lunges (3x10/leg)",
+            "Hanging Leg Raises (3x10-15)",
+            "Dumbbell Calf Raises (4x20+)",
+          ],
+        },
+        day3: {
+          title: "Day 3: Overhead Press & Incline Bench",
+          t1: { name: "Overhead Press (OHP)", liftKey: "ohp" },
+          t2: { name: "Incline Bench Press", liftKey: "bench" },
+          accessories: [
+            "Dumbbell Lateral Raises (4x15-20)",
+            "Weighted Chin-ups (3xAMRAP)",
+            "Dumbbell Hammer Curls (3x10-15)",
+            "Barbell Shrugs (3x10-15)",
+          ],
+        },
+        day4: {
+          title: "Day 4: Deadlift & Front Squat",
+          t1: { name: "Deadlift", liftKey: "deadlift" },
+          t2: { name: "Front Squat", liftKey: "squat" },
+          accessories: [
+            "Barbell Bent-Over Rows (4x8-10)",
+            "Dumbbell Split Squats (3x10/leg)",
+            "Weighted Crunches (3x15)",
+            "Weighted Back Extensions (3x12)",
+          ],
+        },
+        day5: {
+          title: "Day 5: Bench Press & Close Grip Bench",
+          t1: { name: "Bench Press", liftKey: "bench" },
+          t2: { name: "Close Grip Bench Press", liftKey: "bench" },
+          accessories: [
+            "Dumbbell Incline Press (3x10-15)",
+            "Dumbbell Bicep Curls (3x10-15)",
+            "DB Overhead Triceps Extension (3x10-15)",
+            "Heavy Dumbbell Rows (4x8)",
+          ],
+        },
+      };
+
+      function calculateWeight(percentage, tm) {
+        const rounding = 5; // Round to nearest 5 lbs
+        const rawWeight = tm * percentage;
+        return Math.round(rawWeight / rounding) * rounding;
+      }
+
+      function updateTrainingMaxes() {
+        const tmPercentage =
+          parseFloat(document.getElementById("tm-percentage").value) / 100;
+        trainingMaxes.bench =
+          parseFloat(document.getElementById("bench-1rm").value) * tmPercentage;
+        trainingMaxes.squat =
+          parseFloat(document.getElementById("squat-1rm").value) * tmPercentage;
+        trainingMaxes.ohp =
+          parseFloat(document.getElementById("ohp-1rm").value) * tmPercentage;
+        trainingMaxes.deadlift =
+          parseFloat(document.getElementById("deadlift-1rm").value) *
+          tmPercentage;
+      }
+
+      function createLiftTable(liftName, liftKey, template) {
+        const tm = trainingMaxes[liftKey];
+        if (!tm || tm <= 0) {
+          return ``; // Return empty so it can be populated later
+        }
+
+        let tableRows = template
+          .map((set, index) => {
+            const weight = calculateWeight(set.percentage, tm);
+            const isAmrap = set.isAmrap;
+            const rowClass = isAmrap
+              ? "bg-amber-100 font-semibold text-amber-800"
+              : "bg-stone-50";
+            return `
+                    <tr class="${rowClass}">
+                        <td class="p-3 table-cell--numeric">${index + 1}</td>
+                        <td class="p-3 table-cell--numeric">${weight} lbs</td>
+                        <td class="p-3 table-cell--numeric">${set.reps}${
+              isAmrap ? " (AMRAP)" : ""
+            }</td>
+                    </tr>
+                `;
+          })
+          .join("");
+
+        return `
+          <div class="bg-white p-6 rounded-2xl shadow-md">
+              <h3 class="text-xl font-bold text-slate-700 mb-4">${liftName}</h3>
+              <div class="overflow-x-auto">
+                  <table class="w-full text-left border-collapse">
+                      <thead class="text-stone-500">
+                          <tr>
+                              <th class="p-3 font-semibold text-right">Set</th>
+                              <th class="p-3 font-semibold text-right">Weight</th>
+                              <th class="p-3 font-semibold text-right">Reps</th>
+                          </tr>
+                      </thead>
+                      <tbody class="text-stone-800">${tableRows}</tbody>
+                  </table>
+              </div>
+          </div>
+        `;
+      }
+
+      function calculateDayVolume(dayData) {
+        const t1Tm = trainingMaxes[dayData.t1.liftKey];
+        const t2Tm = trainingMaxes[dayData.t2.liftKey];
+
+        const t1Volume = liftTemplates.t1.reduce((acc, set) => {
+          const weight = calculateWeight(set.percentage, t1Tm);
+          const reps = parseInt(set.reps);
+          return acc + weight * reps;
+        }, 0);
+
+        const t2Volume = liftTemplates.t2.reduce((acc, set) => {
+          const weight = calculateWeight(set.percentage, t2Tm);
+          const reps = parseInt(set.reps);
+          return acc + weight * reps;
+        }, 0);
+
+        return t1Volume + t2Volume;
+      }
+
+      function displayDay(dayKey) {
+        document.querySelectorAll(".workout-day-container").forEach((el) => {
+          el.classList.add("hidden");
+        });
+        const dayToShow = document.getElementById(`${dayKey}-content`);
+        if (dayToShow) dayToShow.classList.remove("hidden");
+
+        document.querySelectorAll("#day-selector button").forEach((button) => {
+          button.classList.remove("active-nav-button");
+          button.classList.add("inactive-nav-button");
+          if (button.dataset.day === dayKey) {
+            button.classList.add("active-nav-button");
+            button.classList.remove("inactive-nav-button");
+          }
+        });
+      }
+
+      function updateApp() {
+        updateTrainingMaxes();
+
+        const bench1rm = document.getElementById("bench-1rm").value;
+        const squat1rm = document.getElementById("squat-1rm").value;
+        const ohp1rm = document.getElementById("ohp-1rm").value;
+        const deadlift1rm = document.getElementById("deadlift-1rm").value;
+        const tmPercent = document.getElementById("tm-percentage").value;
+
+        // Update screen display
+        document.getElementById("bench-tm-display").textContent = Math.round(
+          trainingMaxes.bench
+        );
+        document.getElementById("squat-tm-display").textContent = Math.round(
+          trainingMaxes.squat
+        );
+        document.getElementById("ohp-tm-display").textContent = Math.round(
+          trainingMaxes.ohp
+        );
+        document.getElementById("deadlift-tm-display").textContent = Math.round(
+          trainingMaxes.deadlift
+        );
+        document.getElementById("tm-percent-display-screen").textContent =
+          tmPercent;
+        document.getElementById("bench-1rm-display").textContent = bench1rm;
+        document.getElementById("squat-1rm-display").textContent = squat1rm;
+        document.getElementById("ohp-1rm-display").textContent = ohp1rm;
+        document.getElementById("deadlift-1rm-display").textContent =
+          deadlift1rm;
+
+        // Update print display
+        document.getElementById("bench-tm-display-print").textContent =
+          Math.round(trainingMaxes.bench);
+        document.getElementById("squat-tm-display-print").textContent =
+          Math.round(trainingMaxes.squat);
+        document.getElementById("ohp-tm-display-print").textContent =
+          Math.round(trainingMaxes.ohp);
+        document.getElementById("deadlift-tm-display-print").textContent =
+          Math.round(trainingMaxes.deadlift);
+        document.getElementById("tm-percent-display-print").textContent =
+          tmPercent;
+        document.getElementById("bench-1rm-display-print").textContent =
+          bench1rm;
+        document.getElementById("squat-1rm-display-print").textContent =
+          squat1rm;
+        document.getElementById("ohp-1rm-display-print").textContent = ohp1rm;
+        document.getElementById("deadlift-1rm-display-print").textContent =
+          deadlift1rm;
+
+        Object.keys(workoutData).forEach((dayKey) => {
+          const dayData = workoutData[dayKey];
+          const dayContainer = document.getElementById(`${dayKey}-content`);
+          if (!dayContainer) return;
+
+          const volumeEl = dayContainer.querySelector(".volume-amount");
+          const t1TableContainer = dayContainer.querySelector(
+            ".t1-table-container"
+          );
+          const t2TableContainer = dayContainer.querySelector(
+            ".t2-table-container"
+          );
+
+          if (volumeEl)
+            volumeEl.textContent = calculateDayVolume(dayData).toLocaleString();
+          if (t1TableContainer)
+            t1TableContainer.innerHTML = createLiftTable(
+              dayData.t1.name,
+              dayData.t1.liftKey,
+              liftTemplates.t1
+            );
+          if (t2TableContainer)
+            t2TableContainer.innerHTML = createLiftTable(
+              dayData.t2.name,
+              dayData.t2.liftKey,
+              liftTemplates.t2
+            );
+        });
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        const updateButton = document.getElementById("update-weights-btn");
+
+        let allDaysHtml = "";
+        Object.keys(workoutData).forEach((dayKey) => {
+          const dayData = workoutData[dayKey];
+          allDaysHtml += `
+                <div id="${dayKey}-content" class="workout-day-container space-y-6 hidden">
+                    <div class="text-center bg-white p-4 rounded-xl shadow-md">
+                        <h2 class="text-2xl font-bold text-slate-800">${
+                          dayData.title
+                        }</h2>
+                        <p class="font-semibold text-slate-600 text-lg">Estimated Minimum Volume: <span class="volume-amount text-slate-800">0</span> lbs</p>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="t1-table-container"></div>
+                        <div class="t2-table-container"></div>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl shadow-md">
+                         <h3 class="text-xl font-bold text-slate-700 mb-4">Accessory Lifts</h3>
+                         <ul class="list-disc list-inside space-y-2 text-stone-700">
+                            ${dayData.accessories
+                              .map((acc) => `<li>${acc}</li>`)
+                              .join("")}
+                         </ul>
+                    </div>
+                </div>
+            `;
+        });
+        workoutContent.innerHTML = allDaysHtml;
+
+        Object.keys(workoutData).forEach((dayKey, index) => {
+          const button = document.createElement("button");
+          button.textContent = `Day ${index + 1}`;
+          button.dataset.day = dayKey;
+          button.className =
+            "px-4 py-2 rounded-lg font-semibold transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2";
+          button.addEventListener("click", () => displayDay(dayKey));
+          daySelector.appendChild(button);
+        });
+
+        updateButton.addEventListener("click", updateApp);
+
+        updateApp();
+        displayDay("day1");
+      });
+    </script>
+  </body>
+</html>
